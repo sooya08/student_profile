@@ -2,7 +2,16 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#1d4ed8" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Student App" />
+    <meta name="application-name" content="Student Profile Manager" />
+    <meta name="msapplication-TileColor" content="#1d4ed8" />
+    <meta name="msapplication-tap-highlight" content="no" />
+    
     <title>Student Profile Management App</title>
 
     <meta name="description" content="Student Profile Management App for Alagappa University - Department of Computer Science Assignment" />
@@ -11,7 +20,7 @@
     <meta property="og:title" content="Student Profile Management App" />
     <meta property="og:description" content="Student Profile Management App for Alagappa University - Department of Computer Science Assignment" />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://alpha.dualite.dev" />
+    <meta property="og:url" content="https://e-management-app-8o6o-dualite.netlify.app" />
     <meta property="og:image" content="https://ibb.co/67X3xfSV" />
     <meta property="og:image:width" content="960" />
     <meta property="og:image:height" content="600" />
@@ -23,15 +32,22 @@
     <meta name="twitter:site" content="@dualitedev" />
     <meta name="twitter:image" content="https://ibb.co/67X3xfSV" />
 
-    <link rel="canonical" href="https://alpha.dualite.dev" />
-    <link rel="icon" type="image/png" sizes="16x16" href="https://i.ibb.co/HLfD5wgf/dualite-favicon.png" />
-
+    <link rel="canonical" href="https://e-management-app-8o6o-dualite.netlify.app" />
+    
+    <link rel="icon" type="image/svg+xml" href="/icons/icon-512x512.svg" />
+    <link rel="icon" type="image/svg+xml" sizes="any" href="/icons/icon-512x512.svg" />
+    
+    <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-512x512.svg" />
+    
+    <link rel="manifest" href="/manifest.json" />
+    
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
         "name": "Student Profile Management App",
-        "url": "https://alpha.dualite.dev",
+        "url": "https://e-management-app-8o6o-dualite.netlify.app",
         "description": "Student Profile Management App for Alagappa University - Department of Computer Science Assignment",
         "applicationCategory": "EducationalApplication",
         "operatingSystem": "Android, Web",
@@ -45,6 +61,19 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(registration => {
+              console.log('SW registered:', registration.scope);
+            })
+            .catch(error => {
+              console.log('SW registration failed:', error);
+            });
+        });
+      }
+    </script>
   
 <script id="dualite-canvas-overlay-v1">
 
