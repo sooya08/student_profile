@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Eye, Edit2, Eraser, Trash2, User, Hash, Building2, Users, Calendar, Phone, MapPin, Search, X, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Save, Eye, Edit2, Eraser, Trash2, User, Hash, Building2, Users, Calendar, Phone, MapPin, Search, X, AlertTriangle, ChevronLeft, ChevronRight, Download, Upload, FileJson } from 'lucide-react';
 
 interface StudentData {
   id: string;
@@ -45,6 +45,7 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -238,6 +239,117 @@ function App() {
     }
   };
 
+  const handleDownload = () => {
+    if (savedStudents.length === 0) {
+      showToast('No data to download', 'error');
+      return;
+    }
+
+    const dataStr = JSON.stringify(savedStudents, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `student_data_${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Data downloaded successfully!', 'success');
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.json')) {
+      showToast('Please select a JSON file', 'error');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const importedData = JSON.parse(content);
+
+        if (!Array.isArray(importedData)) {
+          showToast('Invalid file format', 'error');
+          return;
+        }
+
+        const validStudents: StudentData[] = [];
+        const errors: string[] = [];
+
+        importedData.forEach((student: StudentData, index: number) => {
+          if (
+            student.name &&
+            student.registerNumber &&
+            student.department &&
+            student.gender &&
+            student.age &&
+            student.mobileNumber
+          ) {
+            validStudents.push({
+              id: student.id || generateId(),
+              name: student.name,
+              registerNumber: student.registerNumber,
+              department: student.department,
+              gender: student.gender,
+              age: student.age,
+              mobileNumber: student.mobileNumber,
+              city: student.city || ''
+            });
+          } else {
+            errors.push(`Record ${index + 1} is missing required fields`);
+          }
+        });
+
+        if (validStudents.length === 0) {
+          showToast('No valid student records found in file', 'error');
+          return;
+        }
+
+        const existingRegNumbers = new Set(savedStudents.map(s => s.registerNumber));
+        const existingMobileNumbers = new Set(savedStudents.map(s => s.mobileNumber));
+
+        const uniqueStudents: StudentData[] = [];
+        const duplicates: string[] = [];
+
+        validStudents.forEach(student => {
+          if (existingRegNumbers.has(student.registerNumber) || existingMobileNumbers.has(student.mobileNumber)) {
+            duplicates.push(student.registerNumber);
+          } else {
+            uniqueStudents.push(student);
+            existingRegNumbers.add(student.registerNumber);
+            existingMobileNumbers.add(student.mobileNumber);
+          }
+        });
+
+        const mergedStudents = [...savedStudents, ...uniqueStudents];
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedStudents));
+        setSavedStudents(mergedStudents);
+
+        let message = `Imported ${uniqueStudents.length} student(s)`;
+        if (duplicates.length > 0) {
+          message += ` (${duplicates.length} duplicate(s) skipped)`;
+        }
+        showToast(message, 'success');
+      } catch (error) {
+        showToast('Error parsing JSON file', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   const filteredStudents = savedStudents.filter(student =>
     student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     student.registerNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -256,6 +368,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-6 px-4 sm:px-6 lg:px-8">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImport}
+        accept=".json"
+        className="hidden"
+      />
+
       {toast && (
         <div
           className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 px-6 py-3 rounded-lg shadow-lg ${
@@ -560,6 +680,51 @@ function App() {
                 </button>
               </>
             )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-xl p-6 sm:p-8 mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <h2 className="text-lg font-semibold text-gray-700 flex items-center gap-2">
+              <FileJson className="w-5 h-5 text-indigo-600" />
+              Data Management
+            </h2>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownload}
+                disabled={savedStudents.length === 0}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg font-medium disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download</span>
+              </button>
+
+              <button
+                onClick={handleImportClick}
+                className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-lg hover:from-violet-600 hover:to-purple-700 transition-all shadow-md hover:shadow-lg font-medium text-sm"
+              >
+                <Upload className="w-4 h-4" />
+                <span>Import</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-200">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <FileJson className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-medium text-gray-800 mb-1">Export & Import Data</h3>
+                <p className="text-sm text-gray-600">
+                  <strong>Download:</strong> Save all student data as a JSON file to your device. You can open this file in any text editor or import it back later.
+                </p>
+                <p className="text-sm text-gray-600 mt-2">
+                  <strong>Import:</strong> Load student data from a previously downloaded JSON file. Duplicate entries (same Register Number or Mobile) will be skipped.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
